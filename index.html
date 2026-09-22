@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#14213D">
+<title>Pharmacode</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💊</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#14213D; --paper:#FFFFFF; --bg:#E6ECEA; --panel:#F6F8F7;
+  --green:#1F7A5C; --amber:#B8741A; --red:#B3261E; --muted:#5B6878; --line:#C9D3D0;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ink:#E4EAF2; --paper:#FFFFFF; --bg:#0F1826; --panel:#18233A;
+    --green:#4FC39A; --amber:#E0A450; --red:#F08A80; --muted:#93A1B5; --line:#2A3752;
+  }
+}
+*,*::before,*::after{box-sizing:inherit}
+html,body{margin:0}
+body{
+  background:var(--bg); color:var(--ink);
+  font-family:"Barlow Semi Condensed","Roboto Condensed","Arial Narrow",system-ui,sans-serif;
+  font-size:18px; line-height:1.4; -webkit-tap-highlight-color:transparent;
+}
+.wrap{max-width:560px;margin:0 auto;padding:18px 16px 40px}
+header{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px}
+h1{font-size:30px;font-weight:700;margin:0;letter-spacing:-.01em}
+.range{color:var(--muted);font-size:15px}
+
+.tabs{display:grid;grid-template-columns:1fr 1fr;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:4px;margin-bottom:16px}
+.tabs button{
+  font:inherit;font-weight:600;font-size:18px;border:0;border-radius:9px;padding:11px 0;
+  background:transparent;color:var(--muted);cursor:pointer
+}
+.tabs button[aria-selected="true"]{background:var(--ink);color:var(--bg)}
+
+section[hidden]{display:none}
+label.field{display:block;font-weight:600;font-size:16px;margin:0 0 6px}
+input.num,input.bars{
+  width:100%;font:inherit;font-size:34px;font-weight:600;letter-spacing:.04em;
+  padding:10px 14px;border:2px solid var(--line);border-radius:10px;
+  background:var(--panel);color:var(--ink);outline:none
+}
+input.num:focus,input.bars:focus{border-color:var(--green)}
+input.bars{font-size:28px;letter-spacing:.12em}
+
+.proof{
+  margin:16px 0 10px;background:var(--paper);border-radius:6px;
+  padding:26px 18px 14px;position:relative;box-shadow:0 0 0 1px #0002;
+}
+.proof::before,.proof::after{
+  content:"";position:absolute;width:14px;height:14px;border:2px solid #9aa6a2;
+}
+.proof::before{top:6px;left:6px;border-right:0;border-bottom:0}
+.proof::after{top:6px;right:6px;border-left:0;border-bottom:0}
+.proof svg{display:block;width:100%;height:auto;max-height:180px}
+.proof .caption{color:#14213D;text-align:center;font-weight:600;font-size:22px;margin-top:8px;letter-spacing:.06em}
+.proof .empty{color:#8893a0;text-align:center;padding:44px 0;font-size:17px}
+
+.readout{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:17px;margin:6px 0 0}
+.readout dt{color:var(--muted)}
+.readout dd{margin:0;font-weight:600;word-break:break-all}
+.big{font-size:44px;font-weight:700;line-height:1;margin:6px 0 2px}
+.msg{min-height:1.4em;font-size:16px;margin-top:6px}
+.msg.err{color:var(--red)} .msg.warn{color:var(--amber)} .msg.ok{color:var(--green)}
+
+.pad{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.pad button{
+  font:inherit;font-weight:700;font-size:20px;border-radius:12px;padding:18px 8px;
+  border:2px solid var(--ink);background:var(--panel);color:var(--ink);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:12px;
+}
+.pad button:active{transform:translateY(1px)}
+.pad .glyph{display:inline-block;height:30px;background:currentColor}
+.pad .thick .glyph{width:14px}
+.pad .thin .glyph{width:5px}
+.pad .sub{font-weight:500;font-size:15px;color:var(--muted)}
+.pad .util{border-color:var(--line);font-size:17px;padding:12px 8px}
+
+.row{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}
+.btn{font:inherit;font-weight:600;font-size:16px;padding:9px 14px;border-radius:9px;border:1px solid var(--line);background:var(--panel);color:var(--ink);cursor:pointer}
+.note{color:var(--muted);font-size:15px;margin-top:22px;line-height:1.45}
+button:focus-visible,input:focus-visible{outline:3px solid var(--green);outline-offset:2px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Pharmacode</h1>
+    <span class="range">One-track, 3 – 131070</span>
+  </header>
+
+  <div class="tabs" role="tablist">
+    <button role="tab" id="tabEnc" aria-selected="true">Number → bars</button>
+    <button role="tab" id="tabDec" aria-selected="false">Bars → number</button>
+  </div>
+
+  <section id="enc">
+    <label class="field" for="numIn">Pharmacode value</label>
+    <input id="numIn" class="num" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" value="3596">
+    <div class="proof" id="encProof"></div>
+    <div class="msg" id="encMsg"></div>
+    <dl class="readout">
+      <dt>Bars (1 thick, 2 thin)</dt><dd id="encBars">–</dd>
+      <dt>Bar count</dt><dd id="encCount">–</dd>
+    </dl>
+    <div class="row">
+      <button class="btn" id="copyBars">Copy bars</button>
+      <button class="btn" id="sendDec">Open in decoder</button>
+    </div>
+  </section>
+
+  <section id="dec" hidden>
+    <label class="field" for="barIn">Bars, left to right</label>
+    <input id="barIn" class="bars" type="text" inputmode="numeric" autocomplete="off" placeholder="e.g. 11222221121">
+    <div class="pad">
+      <button class="thick" data-add="1"><span class="glyph"></span><span>Thick <span class="sub">1</span></span></button>
+      <button class="thin" data-add="2"><span class="glyph"></span><span>Thin <span class="sub">2</span></span></button>
+      <button class="util" id="back">Delete last</button>
+      <button class="util" id="clear">Clear</button>
+    </div>
+    <div class="proof" id="decProof"></div>
+    <div class="big" id="decVal">–</div>
+    <div class="msg" id="decMsg"></div>
+    <dl class="readout">
+      <dt>Bar count</dt><dd id="decCount">0</dd>
+      <dt>If read right to left</dt><dd id="decRev">–</dd>
+    </dl>
+  </section>
+
+  <p class="note">Proportions follow the Laetus spec: thin bar 0.5 mm, thick bar 1.5 mm, gaps 1.0 mm. Pharmacode reads differently backwards, so the decoder also shows the reversed value in case the pack was fed the other way round.</p>
+</div>
+
+<script>
+(function(){
+  var MIN=3, MAX=131070;
+  var $=function(id){return document.getElementById(id)};
+
+  // Even -> thick, N=(N-2)/2. Odd -> thin, N=(N-1)/2. Bars build right-to-left.
+  function encode(n){
+    var s="";
+    while(n>0){
+      if(n%2===0){s="1"+s;n=(n-2)/2}
+      else{s="2"+s;n=(n-1)/2}
+    }
+    return s;
+  }
+  // Bar at position i from the right is worth 2^i (thin) or 2^(i+1) (thick).
+  function decode(bars){
+    var v=0,len=bars.length;
+    for(var i=0;i<len;i++){
+      var w=Math.pow(2,len-1-i);
+      v+= bars[i]==="1" ? 2*w : w;
+    }
+    return v;
+  }
+
+  function svgFor(bars){
+    var thin=0.5, thick=1.5, gap=1.0, quiet=5, h=12, w=quiet*2, i;
+    for(i=0;i<bars.length;i++){w+=(bars[i]==="1"?thick:thin);if(i<bars.length-1)w+=gap}
+    var x=quiet, rects="";
+    for(i=0;i<bars.length;i++){
+      var bw=bars[i]==="1"?thick:thin;
+      rects+='<rect x="'+x.toFixed(2)+'" y="0" width="'+bw+'" height="'+h+'" fill="#000"/>';
+      x+=bw+gap;
+    }
+    return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+w.toFixed(2)+' '+h+'" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Pharmacode bars">'+rects+'</svg>';
+  }
+
+  function renderEncode(){
+    var raw=$("numIn").value.replace(/\D/g,"");
+    if(raw!==$("numIn").value) $("numIn").value=raw;
+    var proof=$("encProof"), msg=$("encMsg");
+    msg.className="msg";
+    if(!raw){
+      proof.innerHTML='<div class="empty">Type a value to draw the code</div>';
+      msg.textContent=""; $("encBars").textContent="–"; $("encCount").textContent="–"; return;
+    }
+    var n=parseInt(raw,10);
+    if(n<MIN||n>MAX){
+      proof.innerHTML='<div class="empty">No code for this value</div>';
+      msg.className="msg err"; msg.textContent="Value must be between 3 and 131070.";
+      $("encBars").textContent="–"; $("encCount").textContent="–"; return;
+    }
+    var bars=encode(n);
+    proof.innerHTML=svgFor(bars)+'<div class="caption">'+n+'</div>';
+    $("encBars").textContent=bars;
+    $("encCount").textContent=bars.length;
+    msg.textContent="";
+  }
+
+  function renderDecode(){
+    var inp=$("barIn");
+    var clean=inp.value.replace(/[^12]/g,"");
+    if(clean!==inp.value) inp.value=clean;
+    var proof=$("decProof"), msg=$("decMsg");
+    $("decCount").textContent=clean.length;
+    msg.className="msg";
+    if(!clean){
+      proof.innerHTML='<div class="empty">Tap Thick or Thin to add bars</div>';
+      $("decVal").textContent="–"; $("decRev").textContent="–"; msg.textContent=""; return;
+    }
+    proof.innerHTML=svgFor(clean);
+    var v=decode(clean);
+    var rev=decode(clean.split("").reverse().join(""));
+    $("decRev").textContent=rev;
+    if(clean.length<2){
+      $("decVal").textContent="–";
+      msg.className="msg warn"; msg.textContent="A pharmacode needs at least 2 bars.";
+    }else if(clean.length>16){
+      $("decVal").textContent="–";
+      msg.className="msg err"; msg.textContent="Too many bars. Pharmacode maxes out at 16.";
+    }else{
+      $("decVal").textContent=v;
+      msg.className="msg ok"; msg.textContent="Valid pharmacode.";
+    }
+  }
+
+  function showTab(which){
+    var enc=which==="enc";
+    $("enc").hidden=!enc; $("dec").hidden=enc;
+    $("tabEnc").setAttribute("aria-selected",enc);
+    $("tabDec").setAttribute("aria-selected",!enc);
+  }
+
+  $("tabEnc").onclick=function(){showTab("enc")};
+  $("tabDec").onclick=function(){showTab("dec")};
+  $("numIn").addEventListener("input",renderEncode);
+  $("barIn").addEventListener("input",renderDecode);
+
+  document.querySelectorAll("[data-add]").forEach(function(b){
+    b.addEventListener("click",function(){
+      $("barIn").value+=b.getAttribute("data-add"); renderDecode();
+      if(navigator.vibrate) navigator.vibrate(10);
+    });
+  });
+  $("back").onclick=function(){var i=$("barIn");i.value=i.value.slice(0,-1);renderDecode()};
+  $("clear").onclick=function(){$("barIn").value="";renderDecode()};
+
+  $("copyBars").onclick=function(){
+    var t=$("encBars").textContent; if(t==="–")return;
+    var btn=this;
+    var done=function(){btn.textContent="Copied";setTimeout(function(){btn.textContent="Copy bars"},1200)};
+    if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(done,function(){})}
+  };
+  $("sendDec").onclick=function(){
+    var t=$("encBars").textContent; if(t==="–")return;
+    $("barIn").value=t; renderDecode(); showTab("dec");
+  };
+
+  renderEncode(); renderDecode();
+})();
+
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+</script>
+</body>
+</html>
