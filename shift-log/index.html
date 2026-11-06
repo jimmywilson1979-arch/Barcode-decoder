@@ -1,0 +1,671 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0a0c10">
+<title>Shift log</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#eceef1; --card:#ffffff; --field:#f4f5f7; --ink:#14171d; --muted:#5b6371; --line:#d5d9e0;
+  --gold:#8f5f00; --gold-soft:#fbefd3; --on-gold:#ffffff; --green:#15804a; --green-soft:#dff3e7; --red:#c0392b;
+  color-scheme:light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0a0c10; --card:#111318; --field:#0d0f14; --ink:#e7e9ee; --muted:#8a92a0; --line:#242833;
+    --gold:#e8b53a; --gold-soft:#2a2211; --on-gold:#111111; --green:#3ecf7a; --green-soft:#10251a; --red:#ff6b5b;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0a0c10; --card:#111318; --field:#0d0f14; --ink:#e7e9ee; --muted:#8a92a0; --line:#242833;
+  --gold:#e8b53a; --gold-soft:#2a2211; --on-gold:#111111; --green:#3ecf7a; --green-soft:#10251a; --red:#ff6b5b;
+  color-scheme:dark;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'Barlow',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;font-size:16px;line-height:1.45;padding-bottom:84px;-webkit-tap-highlight-color:transparent}
+h1,h2,h3,.cond{font-family:'Barlow Condensed','Arial Narrow',system-ui,sans-serif}
+h2{font-size:22px;font-weight:700;margin:0}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+
+/* Header */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line);padding:10px 16px 12px}
+.top-in{max-width:640px;margin:0 auto}
+.brand{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.brand h1{margin:0;font-size:26px;font-weight:700;letter-spacing:.2px}
+.brand span{color:var(--muted);font-size:14px}
+.stats{display:grid;grid-template-columns:auto 1fr;gap:18px;margin-top:8px;align-items:end}
+.tonight-stat{display:flex;align-items:baseline;gap:8px}
+.tonight-stat b{font-family:'Barlow Condensed',sans-serif;font-size:40px;line-height:1;font-weight:700}
+.tonight-stat div{display:flex;flex-direction:column;font-size:13px;color:var(--muted);line-height:1.25}
+.tonight-stat div strong{color:var(--ink);font-weight:600;font-size:15px}
+.bars{display:flex;flex-direction:column;gap:6px}
+.bar-row{font-size:13px;color:var(--muted)}
+.bar-row strong{color:var(--ink);font-weight:600}
+.track{height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin-top:3px}
+.fill{height:100%;width:0;background:var(--gold);border-radius:3px;transition:width .3s}
+.fill.met{background:var(--green)}
+@media (prefers-reduced-motion: reduce){.fill{transition:none}}
+
+main{max-width:640px;margin:0 auto;padding:14px 14px 0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px}
+
+/* Form */
+.form-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:8px}
+.fld{display:flex;flex-direction:column;gap:5px;margin-bottom:12px;min-width:0}
+.fld>label{font-size:14px;color:var(--muted);font-weight:500}
+input,select,textarea{font-size:16px;background:var(--field);border:1px solid var(--line);border-radius:9px;padding:10px 12px;width:100%;min-height:46px;color:var(--ink)}
+select{appearance:auto}
+textarea{resize:vertical;min-height:104px;line-height:1.45}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.timebox{display:flex;gap:6px}
+.timebox input{flex:1;min-width:0}
+.dur-prev{margin:-4px 0 12px;font-size:15px;color:var(--muted);min-height:1.45em}
+.dur-prev b{font-family:'Barlow Condensed',sans-serif;font-size:20px;color:var(--green)}
+.dur-prev.warn,.dur-prev.warn b{color:var(--gold)}
+button{cursor:pointer;border-radius:9px;min-height:44px;border:1px solid var(--line);background:var(--card);padding:0 14px;font-weight:600}
+button:disabled{opacity:.4;cursor:default}
+.primary{background:var(--gold);color:var(--on-gold);border-color:var(--gold)}
+.ghost{background:transparent}
+.danger{background:var(--red);color:#fff;border-color:var(--red)}
+.small-btn{min-height:36px;font-size:14px;padding:0 12px}
+.now{flex:none;padding:0 12px;font-size:14px}
+.actions{display:flex;gap:10px}
+.actions .primary{flex:1}
+.hint{font-size:14px;color:var(--muted);margin:10px 0 0}
+
+/* Entries */
+.list-head{display:flex;justify-content:space-between;align-items:baseline;margin:22px 2px 10px;gap:10px}
+.list-head span{font-size:14px;color:var(--gold);font-weight:600}
+.list-head span.ok{color:var(--green)}
+.entry{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px}
+.e-top{display:flex;gap:12px;align-items:center}
+.tag{flex:none;display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:74px;padding:5px 8px;border:1.5px solid var(--gold);border-radius:6px;background:var(--gold-soft)}
+.tag-no{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:26px;line-height:1;color:var(--gold)}
+.tag-cub{font-size:12px;color:var(--muted);margin-top:2px;font-weight:600}
+.e-title{flex:1;min-width:0;display:flex;flex-direction:column}
+.e-title b{font-size:17px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.e-title span{font-size:14px;color:var(--muted)}
+.e-dur{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:22px;color:var(--green);white-space:nowrap}
+.e-dur.open{color:var(--gold);font-size:15px;font-family:'Barlow',sans-serif;font-weight:600;text-align:right}
+.copyrow{display:grid;grid-template-columns:repeat(auto-fit,minmax(92px,1fr));gap:6px;margin:12px 0 6px}
+.chip{display:flex;flex-direction:column;align-items:flex-start;text-align:left;padding:6px 10px;min-height:50px;background:var(--field);font-weight:500}
+.chip small{font-size:12px;color:var(--muted)}
+.chip span{font-family:'Barlow Condensed',sans-serif;font-size:19px;font-weight:600;word-break:break-all;line-height:1.15}
+.chip.missing span{color:var(--gold);font-size:16px}
+.desc{display:block;width:100%;text-align:left;font-weight:400;padding:10px 12px;background:var(--field);white-space:pre-wrap;line-height:1.45}
+.desc i{color:var(--gold)}
+.e-actions{display:flex;gap:6px;margin-top:10px}
+.e-actions button{flex:1;min-height:40px;font-size:14px;padding:0 8px}
+.e-actions .jde{flex:2}
+.entry.done{border-color:var(--green)}
+.entry.done .jde{color:var(--green);border-color:var(--green);background:var(--green-soft)}
+.entry.done .tag{opacity:.6}
+.empty{color:var(--muted);text-align:center;padding:22px 16px;border:1px dashed var(--line);border-radius:10px}
+
+/* Week */
+.weeknav{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.weeknav h2{text-align:center;flex:1}
+.weeknav button{min-width:48px;font-size:22px}
+.prog-row{margin-bottom:12px}
+.prog-row .top-line{display:flex;justify-content:space-between;align-items:baseline}
+.prog-row b{font-family:'Barlow Condensed',sans-serif;font-size:30px;font-weight:700}
+.prog-row small{color:var(--muted);font-size:14px}
+.prog-row .track{height:9px;border-radius:5px}
+.status{margin:4px 0 0;font-weight:600;color:var(--gold)}
+.status.met{color:var(--green)}
+.wide{width:100%;margin-bottom:14px}
+.day-head{display:flex;justify-content:space-between;align-items:baseline;margin:18px 2px 8px}
+.day-head h3{margin:0;font-size:19px;font-weight:700}
+.day-head span{font-size:14px;color:var(--muted)}
+
+/* Plant list */
+details.cub{padding:0;overflow:hidden}
+details.cub summary{list-style:none;display:flex;justify-content:space-between;align-items:center;padding:14px 16px;cursor:pointer;min-height:52px}
+details.cub summary::-webkit-details-marker{display:none}
+.cub-name{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:22px}
+.cub-count{color:var(--muted);font-size:14px}
+details.cub[open] summary{border-bottom:1px solid var(--line)}
+.cub-body{padding:14px 16px 16px}
+.cub-rename{display:flex;gap:10px;align-items:flex-end;margin-bottom:14px}
+.cub-rename .fld{flex:1;margin:0}
+.item{display:grid;grid-template-columns:1fr 84px 40px;gap:6px;margin-bottom:6px}
+.item select{grid-column:1 / 3;min-height:38px;padding:6px 10px;font-size:14px;color:var(--muted)}
+.item input{min-height:42px;padding:8px 10px}
+.item .del{grid-row:1 / 3;grid-column:3;padding:0;min-height:0;color:var(--red);font-size:18px}
+.item + .item{padding-top:8px;border-top:1px solid var(--line)}
+.add-cub{display:flex;gap:8px;margin-bottom:14px}
+.add-cub input{flex:1}
+.settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.settings-grid .fld{margin:0}
+.btn-stack{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.sync{font-size:14px;color:var(--muted);margin:6px 0 0}
+.sync.ok{color:var(--green)}
+
+/* Tabs */
+.tabs{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--card);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(3,1fr);padding-bottom:env(safe-area-inset-bottom,0px)}
+.tabs button{border:0;border-radius:0;background:transparent;min-height:60px;color:var(--muted);font-family:'Barlow Condensed',sans-serif;font-size:19px;font-weight:600;border-top:3px solid transparent}
+.tabs button[aria-current="page"]{color:var(--ink);border-top-color:var(--gold)}
+
+/* Toast + modal */
+#toast{position:fixed;left:50%;bottom:calc(76px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:9px;font-size:15px;font-weight:500;opacity:0;pointer-events:none;transition:opacity .2s;z-index:20;max-width:calc(100% - 32px);text-align:center}
+#toast.show{opacity:1}
+#modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;justify-content:center;z-index:30;padding:16px;padding-bottom:calc(16px + env(safe-area-inset-bottom,0px))}
+#modal[hidden]{display:none}
+.sheet{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;width:100%;max-width:440px}
+.sheet p{margin:0 0 16px;font-size:17px}
+.sheet .actions button{flex:1}
+[hidden]{display:none !important}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="top-in">
+    <div class="brand"><h1>Shift log</h1><span id="shiftLabel"></span></div>
+    <div class="stats">
+      <div class="tonight-stat">
+        <b id="tN">0</b>
+        <div><span>tonight</span><strong id="tH">0h 00m</strong></div>
+      </div>
+      <div class="bars">
+        <div class="bar-row"><strong id="hwE">0</strong> of <span id="hwET">15</span> entries this week<div class="track"><div class="fill" id="hwEB"></div></div></div>
+        <div class="bar-row"><strong id="hwH">0.0</strong> of <span id="hwHT">25</span> hours this week<div class="track"><div class="fill" id="hwHB"></div></div></div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- Tonight -->
+  <section id="v-tonight">
+    <form id="f" class="card" autocomplete="off" novalidate>
+      <div class="form-head">
+        <h2 id="formTitle">New entry</h2>
+        <button type="button" id="cancelEdit" class="ghost small-btn" hidden>Cancel edit</button>
+      </div>
+      <div class="fld"><label for="fDate">Shift date</label><input type="date" id="fDate"></div>
+      <div class="row2">
+        <div class="fld"><label for="fCub">Cubicle</label><select id="fCub"></select></div>
+        <div class="fld"><label for="fPlant">Equipment</label><select id="fPlant"></select></div>
+      </div>
+      <div class="row2" id="otherBox" hidden>
+        <div class="fld"><label for="fOName">Equipment name</label><input id="fOName" placeholder="e.g. Labeller"></div>
+        <div class="fld"><label for="fONum">Plant number</label><input id="fONum" placeholder="e.g. 2650"></div>
+      </div>
+      <div class="fld"><label for="fJob">Job number</label><input id="fJob" placeholder="Leave blank if you don't have it yet"></div>
+      <div class="row2">
+        <div class="fld"><label for="fIn">Time in</label><div class="timebox"><input type="time" id="fIn"><button type="button" class="now" data-now="fIn" aria-label="Set time in to now">Now</button></div></div>
+        <div class="fld"><label for="fOut">Time complete</label><div class="timebox"><input type="time" id="fOut"><button type="button" class="now" data-now="fOut" aria-label="Set time complete to now">Now</button></div></div>
+      </div>
+      <p class="dur-prev" id="durPrev" aria-live="polite"></p>
+      <div class="fld"><label for="fDesc">Description</label><textarea id="fDesc" placeholder="What was wrong, what you found, what you did"></textarea></div>
+      <div class="actions">
+        <button type="submit" class="primary" id="saveBtn">Save entry</button>
+        <button type="button" id="clearBtn" class="ghost">Clear</button>
+      </div>
+      <p class="hint">Whatever you type here stays put if you leave the app, so you can fill it in as you go.</p>
+    </form>
+
+    <div class="list-head"><h2 id="tonightHead">Tonight</h2><span id="toEnter"></span></div>
+    <div id="tonightList"></div>
+  </section>
+
+  <!-- Week -->
+  <section id="v-week" hidden>
+    <div class="weeknav">
+      <button id="wPrev" class="ghost" aria-label="Previous week">‹</button>
+      <h2 id="wLabel"></h2>
+      <button id="wNext" class="ghost" aria-label="Next week">›</button>
+    </div>
+    <div class="card">
+      <div class="prog-row">
+        <div class="top-line"><b id="wE">0</b><small id="wET"></small></div>
+        <div class="track"><div class="fill" id="wEB"></div></div>
+      </div>
+      <div class="prog-row">
+        <div class="top-line"><b id="wH">0.0</b><small id="wHT"></small></div>
+        <div class="track"><div class="fill" id="wHB"></div></div>
+      </div>
+      <p class="status" id="wStatus"></p>
+    </div>
+    <button id="copyWeek" class="ghost wide">Copy week summary</button>
+    <div id="weekList"></div>
+  </section>
+
+  <!-- Plant list -->
+  <section id="v-plant" hidden>
+    <div class="card">
+      <h2>Cubicles and equipment</h2>
+      <p class="hint">Rename, add, delete or move equipment between cubicles. Entries you've already saved keep the details they were logged with.</p>
+    </div>
+    <div id="plantList"></div>
+    <div class="add-cub">
+      <input id="newCub" placeholder="New cubicle, e.g. 7J" aria-label="New cubicle name">
+      <button id="addCub" type="button">Add cubicle</button>
+    </div>
+
+    <div class="card">
+      <h2>Weekly minimum</h2>
+      <p class="hint" style="margin:4px 0 12px">You meet the minimum by hitting either target.</p>
+      <div class="settings-grid">
+        <div class="fld"><label for="sE">Entries per week</label><input id="sE" type="number" inputmode="numeric" min="1"></div>
+        <div class="fld"><label for="sH">Hours per week</label><input id="sH" type="number" inputmode="decimal" min="1" step="0.5"></div>
+      </div>
+      <div class="fld" style="margin-top:10px"><label for="sW">Week starts on</label>
+        <select id="sW"><option value="0">Sunday</option><option value="1">Monday</option><option value="6">Saturday</option><option value="5">Friday</option><option value="4">Thursday</option><option value="3">Wednesday</option><option value="2">Tuesday</option></select>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Backup</h2>
+      <p class="sync" id="sync"></p>
+      <div class="btn-stack">
+        <button id="copyBackup" type="button" class="ghost">Copy backup</button>
+        <textarea id="restoreTxt" placeholder="To restore, paste a backup here" aria-label="Paste a backup to restore"></textarea>
+        <button id="restoreBtn" type="button" class="ghost">Restore from pasted backup</button>
+        <button id="resetPlant" type="button" class="ghost">Reset cubicle list to original</button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<nav class="tabs" aria-label="Sections">
+  <button type="button" data-view="tonight">Tonight</button>
+  <button type="button" data-view="week">Week</button>
+  <button type="button" data-view="plant">Plant list</button>
+</nav>
+
+<div id="toast" role="status"></div>
+<div id="modal" hidden><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="mText"><p id="mText"></p><div class="actions"><button type="button" id="mNo" class="ghost">Cancel</button><button type="button" id="mYes" class="danger">Delete</button></div></div></div>
+
+<script>
+(function(){
+'use strict';
+
+var KEY='shiftlog-v1', DKEY='shiftlog-draft', EKEY='shiftlog-edit', VKEY='shiftlog-view';
+
+var RAW=[
+['7A',[['Noack','988'],['Hapa','1909'],['PMM','971'],['OCS','1585'],['Marchesini','2204'],['PTS','2224']]],
+['7B',[['Noack','1225'],['Promatic','1445'],['Marchesini','AP8200'],['HTS','AP7766'],['Datamatrix','1554'],['C/Weigher','1569'],['P150','1581'],['P100','1487'],['ASB','1074']]],
+['7C',[['Noack','1297'],['Uni Pack','2710'],['EMF','871'],['Promatic','1298'],['Datamatrix','1580'],['OCS','01184'],['Marchesini','2205'],['HTS','2397'],['ASB','1529']]],
+['7D',[['Cartoner','1273'],['OCS','1586'],['EVO','2520']]],
+['7E',[['MTS','1971'],['HTS','1981'],['PTS','1973'],['C/Weigher','1896'],['LSC','2528']]],
+['7F',[['Noack','870'],['PMM','1227'],['Rontech','01180'],['Marchesini','2062'],['Long conveyor','2101']]],
+['7G',[['Syringe assembler labeller','2844'],['MTS','2204'],['Proseal','2828'],['HTS','2224'],['PTS','2225'],['Mecmesin','1908'],['C/Weigher','1585']]],
+['7H',[['Datamatrix','1561'],['Lockwood sealer','1825'],['LSC v2','2887']]],
+['2A',[['Noack','1288'],['Algus','1317']]],
+['4S',[['Marchesini','2067'],['Proseal','2010'],['Antares','2577'],['MTS','2577'],['HTS','2534'],['PTS','2535'],['Mecmesin','2255']]],
+['4L',[['Marchesini','2203'],['Newman labeller','1906'],['AV cartoner','2105'],['HTS','2297'],['Carton turner','2320']]],
+['5W',[['Bottle scrambler','2093'],['Pharma Count','2647'],['Pharma Lift','2648'],['Capper','2649'],['Labeller','2650'],['PMM','979'],['MTS','2575'],['ASB','1080'],['HTS','2692'],['PTS','2691']]],
+['5Y',[['SV2','1041'],['Cotton wool',''],['Capper','1101'],['Induction seal','0974'],['Capper','0887'],['Labeller','1558'],['PMM','1378'],['C/Weigher','999'],['Shrinkwrapper','1821']]],
+['Forest Road',[['Noack','384'],['PMM','1273'],['C/Weigher','867'],['Evo','2520'],['TE labeller','1581'],['BOLI labeller','1523']]],
+['Raven',[]]
+];
+
+/* ---------- helpers ---------- */
+function $(id){return document.getElementById(id)}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+function pad(n){return String(n).padStart(2,'0')}
+function ymd(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())}
+function parseYmd(s){var p=String(s).split('-').map(Number);return new Date(p[0],p[1]-1,p[2])}
+function shiftDate(){var d=new Date();if(d.getHours()<12)d.setDate(d.getDate()-1);return ymd(d)}
+function dayLabel(s){return parseYmd(s).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})}
+function shortDate(d){return d.toLocaleDateString('en-GB',{day:'numeric',month:'short'})}
+function toMin(t){if(!t)return null;var p=t.split(':').map(Number);if(isNaN(p[0])||isNaN(p[1]))return null;return p[0]*60+p[1]}
+function mins(a,b){var x=toMin(a),y=toMin(b);if(x==null||y==null)return null;var d=y-x;if(d<0)d+=1440;return d}
+function fmtDur(m){return Math.floor(m/60)+'h '+pad(m%60)+'m'}
+function sortKey(e){var m=toMin(e.tin);return m==null?9999:(m<720?m+1440:m)}
+function itemLabel(it){return it.num?it.name+' – '+it.num:it.name}
+function lsGet(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}}
+function lsSet(k,v){try{if(v==null)localStorage.removeItem(k);else localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}
+function valid(s){return !!(s&&Array.isArray(s.plant)&&Array.isArray(s.entries))}
+function buildDefault(){return RAW.map(function(r){return {id:uid(),name:r[0],items:r[1].map(function(i){return {id:uid(),name:i[0],num:i[1]}})}})}
+function fresh(){return {v:1,updatedAt:0,plant:buildDefault(),entries:[],settings:{targetEntries:15,targetHours:25,weekStart:0}}}
+function emptyBuf(date){return {date:date||shiftDate(),cub:'',plantId:'',oName:'',oNum:'',job:'',tin:'',tout:'',desc:''}}
+function bufEmpty(b){return !b.cub&&!b.job&&!b.tin&&!b.tout&&!b.desc&&!b.oName&&!b.oNum}
+function cubByName(n){for(var i=0;i<state.plant.length;i++)if(state.plant[i].name===n)return state.plant[i];return null}
+function cubById(id){for(var i=0;i<state.plant.length;i++)if(state.plant[i].id===id)return state.plant[i];return null}
+function normSettings(){state.settings=Object.assign({targetEntries:15,targetHours:25,weekStart:0},state.settings||{});if(!state.settings.wsChosen)state.settings.weekStart=0}
+
+/* ---------- state ---------- */
+var state=lsGet(KEY); if(!valid(state)) state=fresh(); normSettings();
+var draft=lsGet(DKEY); if(!draft||typeof draft!=='object') draft=emptyBuf();
+var edit=lsGet(EKEY);
+var weekOffset=0, openCubs=new Set();
+
+function cur(){return edit||draft}
+function persistBuf(){if(edit)lsSet(EKEY,edit);else lsSet(DKEY,draft)}
+
+function save(opts){
+  state.updatedAt=Date.now();
+  if(!lsSet(KEY,state)) toast('Could not save on this phone. Storage may be full.');
+  renderAll(opts);
+}
+
+/* ---------- week maths ---------- */
+function weekStartDate(s,off){var d=parseYmd(s);var ws=+state.settings.weekStart;var diff=(d.getDay()-ws+7)%7;d.setDate(d.getDate()-diff+(off||0)*7);return d}
+function weekRange(off){var st=weekStartDate(shiftDate(),off);var en=new Date(st);en.setDate(en.getDate()+6);return {a:ymd(st),b:ymd(en),st:st,en:en}}
+function weekEntries(off){var r=weekRange(off);return state.entries.filter(function(e){return e.date>=r.a&&e.date<=r.b})}
+function totals(list){var m=0;list.forEach(function(e){var d=mins(e.tin,e.tout);if(d!=null)m+=d});return {n:list.length,m:m}}
+
+/* ---------- form ---------- */
+function fillCubOptions(){
+  var b=cur(), names=state.plant.map(function(c){return c.name});
+  var html='<option value="">Select</option>'+names.map(function(n){return '<option value="'+esc(n)+'">'+esc(n)+'</option>'}).join('');
+  if(b.cub&&names.indexOf(b.cub)<0) html+='<option value="'+esc(b.cub)+'">'+esc(b.cub)+'</option>';
+  $('fCub').innerHTML=html; $('fCub').value=b.cub||'';
+}
+function fillPlantOptions(){
+  var b=cur(), c=cubByName(b.cub), items=c?c.items:[];
+  var html='<option value="">'+(b.cub?'Select equipment':'Pick a cubicle first')+'</option>';
+  html+=items.map(function(it){return '<option value="'+it.id+'">'+esc(itemLabel(it)||'(unnamed)')+'</option>'}).join('');
+  html+='<option value="__other">Not listed, type it in</option>';
+  $('fPlant').innerHTML=html;
+  var ok=b.plantId==='__other'||items.some(function(it){return it.id===b.plantId});
+  if(!ok) b.plantId='';
+  $('fPlant').value=b.plantId||'';
+  $('otherBox').hidden=b.plantId!=='__other';
+}
+function durPreview(){
+  var b=cur(), m=mins(b.tin,b.tout), el=$('durPrev');
+  el.classList.remove('warn');
+  if(m==null){el.textContent=b.tin?'Add the time complete when you finish.':'';return}
+  if(m>720){el.classList.add('warn');el.innerHTML='<b>'+fmtDur(m)+'</b> Over 12 hours, check the times.';return}
+  el.innerHTML='<b>'+fmtDur(m)+'</b> on this job';
+}
+function fillForm(){
+  var b=cur();
+  $('fDate').value=b.date||shiftDate();
+  fillCubOptions(); fillPlantOptions();
+  $('fOName').value=b.oName||''; $('fONum').value=b.oNum||'';
+  $('fJob').value=b.job||''; $('fIn').value=b.tin||''; $('fOut').value=b.tout||''; $('fDesc').value=b.desc||'';
+  $('formTitle').textContent=edit?'Editing entry from '+dayLabel(edit.date):'New entry';
+  $('saveBtn').textContent=edit?'Save changes':'Save entry';
+  $('cancelEdit').hidden=!edit; $('clearBtn').hidden=!!edit;
+  durPreview();
+}
+function readForm(){
+  var b=cur();
+  b.date=$('fDate').value||shiftDate();
+  var newCub=$('fCub').value;
+  if(newCub!==b.cub){b.cub=newCub;b.plantId='';fillPlantOptions()}
+  else {b.plantId=$('fPlant').value;$('otherBox').hidden=b.plantId!=='__other'}
+  b.oName=$('fOName').value; b.oNum=$('fONum').value;
+  b.job=$('fJob').value; b.tin=$('fIn').value; b.tout=$('fOut').value; b.desc=$('fDesc').value;
+  persistBuf(); durPreview();
+}
+$('f').addEventListener('input',readForm);
+$('f').addEventListener('change',readForm);
+document.querySelectorAll('[data-now]').forEach(function(btn){
+  btn.addEventListener('click',function(){var d=new Date();$(btn.dataset.now).value=pad(d.getHours())+':'+pad(d.getMinutes());readForm()});
+});
+$('f').addEventListener('submit',function(ev){
+  ev.preventDefault(); readForm();
+  var b=cur();
+  if(!b.cub){toast('Pick a cubicle first');$('fCub').focus();return}
+  if(!b.tin){toast('Add the time you went in');$('fIn').focus();return}
+  var pn='',pnum='';
+  if(b.plantId==='__other'){pn=b.oName.trim();pnum=b.oNum.trim()}
+  else if(b.plantId){var c=cubByName(b.cub);var it=c&&c.items.filter(function(i){return i.id===b.plantId})[0];if(it){pn=it.name;pnum=it.num}}
+  var data={date:b.date,cub:b.cub,plantName:pn,plantNum:pnum,job:b.job.trim(),tin:b.tin,tout:b.tout,desc:b.desc.trim()};
+  var target=edit&&state.entries.filter(function(x){return x.id===edit.id})[0];
+  if(target){
+    Object.assign(target,data); edit=null; lsSet(EKEY,null); save(); toast('Changes saved');
+  } else {
+    state.entries.push(Object.assign({id:uid(),entered:false,createdAt:Date.now()},data));
+    edit=null; lsSet(EKEY,null);
+    draft=emptyBuf(b.date); lsSet(DKEY,draft); save(); toast('Entry saved');
+  }
+});
+$('cancelEdit').addEventListener('click',function(){edit=null;lsSet(EKEY,null);fillForm()});
+$('clearBtn').addEventListener('click',function(){
+  if(bufEmpty(draft))return;
+  ask('Clear the form? What you have typed will be lost.','Clear').then(function(ok){if(!ok)return;draft=emptyBuf(draft.date);lsSet(DKEY,draft);fillForm()});
+});
+
+function startEdit(id){
+  var e=state.entries.filter(function(x){return x.id===id})[0]; if(!e)return;
+  var c=cubByName(e.cub), match=c&&c.items.filter(function(i){return i.name===e.plantName&&i.num===e.plantNum})[0];
+  edit={id:e.id,date:e.date,cub:e.cub,plantId:match?match.id:((e.plantName||e.plantNum)?'__other':''),oName:match?'':(e.plantName||''),oNum:match?'':(e.plantNum||''),job:e.job||'',tin:e.tin||'',tout:e.tout||'',desc:e.desc||''};
+  lsSet(EKEY,edit); showView('tonight'); fillForm(); window.scrollTo(0,0);
+}
+
+/* ---------- entry cards ---------- */
+function chip(label,val){
+  return '<button type="button" class="chip copy'+(val?'':' missing')+'" data-copy="'+esc(val||'')+'"><small>'+label+'</small><span>'+esc(val||'missing')+'</span></button>';
+}
+function entryCard(e){
+  var m=mins(e.tin,e.tout);
+  return '<article class="entry'+(e.entered?' done':'')+'" data-id="'+e.id+'">'+
+    '<div class="e-top">'+
+      '<div class="tag"><span class="tag-no">'+esc(e.plantNum||'?')+'</span><span class="tag-cub">'+esc(e.cub)+'</span></div>'+
+      '<div class="e-title"><b>'+esc(e.plantName||'No equipment picked')+'</b><span>'+esc(e.tin||'--:--')+' to '+esc(e.tout||'--:--')+'</span></div>'+
+      '<div class="e-dur'+(m==null?' open':'')+'">'+(m==null?'No finish<br>time yet':fmtDur(m))+'</div>'+
+    '</div>'+
+    '<div class="copyrow">'+chip('Job no.',e.job)+chip('Cubicle',e.cub)+chip('Plant no.',e.plantNum)+chip('Time in',e.tin)+chip('Complete',e.tout)+'</div>'+
+    '<button type="button" class="desc copy" data-copy="'+esc(e.desc||'')+'">'+(e.desc?esc(e.desc):'<i>No description yet</i>')+'</button>'+
+    '<div class="e-actions">'+
+      '<button type="button" class="jde" data-act="jde">'+(e.entered?'✓ Entered in JDE':'Mark entered in JDE')+'</button>'+
+      '<button type="button" data-act="edit">Edit</button>'+
+      '<button type="button" data-act="del">Delete</button>'+
+    '</div></article>';
+}
+function sorted(list){return list.slice().sort(function(a,b){return a.date<b.date?-1:a.date>b.date?1:sortKey(a)-sortKey(b)})}
+
+/* ---------- renders ---------- */
+function setBar(id,frac,met){var el=$(id);el.style.width=Math.min(100,Math.round(frac*100))+'%';el.classList.toggle('met',!!met)}
+function renderHeader(){
+  var sd=shiftDate(); $('shiftLabel').textContent='Night of '+dayLabel(sd);
+  var t=totals(state.entries.filter(function(e){return e.date===sd}));
+  $('tN').textContent=t.n; $('tH').textContent=fmtDur(t.m);
+  var w=totals(weekEntries(0)), te=+state.settings.targetEntries, th=+state.settings.targetHours, hrs=w.m/60;
+  var met=w.n>=te||hrs>=th;
+  $('hwE').textContent=w.n; $('hwET').textContent=te; $('hwH').textContent=hrs.toFixed(1); $('hwHT').textContent=th;
+  setBar('hwEB',w.n/te,met); setBar('hwHB',hrs/th,met);
+}
+function renderTonight(){
+  var sd=shiftDate(), list=sorted(state.entries.filter(function(e){return e.date===sd}));
+  $('tonightList').innerHTML=list.length?list.map(entryCard).join(''):'<div class="empty">No entries yet tonight. Fill in the form above when you go into a cubicle.</div>';
+  var pending=state.entries.filter(function(e){return !e.entered}).length, el=$('toEnter');
+  el.className=''; 
+  if(pending){el.textContent=pending+' to enter in JDE';}
+  else if(state.entries.length){el.textContent='All entered in JDE';el.className='ok'}
+  else el.textContent='';
+}
+function renderWeek(){
+  var r=weekRange(weekOffset), list=weekEntries(weekOffset), t=totals(list);
+  var te=+state.settings.targetEntries, th=+state.settings.targetHours, hrs=t.m/60, met=t.n>=te||hrs>=th;
+  $('wLabel').textContent=weekOffset===0?'This week':shortDate(r.st)+' to '+shortDate(r.en);
+  $('wE').textContent=t.n; $('wET').textContent='of '+te+' entries';
+  $('wH').textContent=hrs.toFixed(1); $('wHT').textContent='of '+th+' hours';
+  setBar('wEB',t.n/te,met); setBar('wHB',hrs/th,met);
+  var st=$('wStatus');
+  if(met){st.textContent='Weekly minimum met';st.className='status met'}
+  else {st.textContent='Need '+(te-t.n)+' more '+(te-t.n===1?'entry':'entries')+' or '+(th-hrs).toFixed(1)+' more hours';st.className='status'}
+  if(weekOffset===0) st.textContent+=' ('+shortDate(r.st)+' to '+shortDate(r.en)+')';
+  $('wNext').disabled=weekOffset>=0;
+  $('copyWeek').disabled=!list.length;
+  var days={}; sorted(list).forEach(function(e){(days[e.date]=days[e.date]||[]).push(e)});
+  var keys=Object.keys(days).sort();
+  $('weekList').innerHTML=keys.length?keys.map(function(d){
+    var dt=totals(days[d]);
+    return '<div class="day-head"><h3>'+dayLabel(d)+'</h3><span>'+dt.n+' '+(dt.n===1?'entry':'entries')+', '+fmtDur(dt.m)+'</span></div>'+days[d].map(entryCard).join('');
+  }).join(''):'<div class="empty">No entries this week.</div>';
+}
+function renderPlant(){
+  var names=state.plant.map(function(c){return c.name});
+  $('plantList').innerHTML=state.plant.map(function(c){
+    var moveOpts=names.filter(function(n){return n!==c.name}).map(function(n){return '<option value="'+esc(n)+'">Move to '+esc(n)+'</option>'}).join('');
+    return '<details class="card cub" data-cid="'+c.id+'"'+(openCubs.has(c.id)?' open':'')+'>'+
+      '<summary><span class="cub-name">'+esc(c.name)+'</span><span class="cub-count">'+c.items.length+' '+(c.items.length===1?'item':'items')+'</span></summary>'+
+      '<div class="cub-body">'+
+        '<div class="cub-rename"><div class="fld"><label>Cubicle name</label><input data-f="cubname" value="'+esc(c.name)+'"></div><button type="button" class="ghost small-btn" data-act="delcub">Delete cubicle</button></div>'+
+        c.items.map(function(it){
+          return '<div class="item" data-iid="'+it.id+'">'+
+            '<input data-f="name" value="'+esc(it.name)+'" placeholder="Equipment" aria-label="Equipment name">'+
+            '<input data-f="num" value="'+esc(it.num)+'" placeholder="Plant no." aria-label="Plant number">'+
+            '<button type="button" class="ghost del" data-act="delitem" aria-label="Delete '+esc(it.name)+'">✕</button>'+
+            '<select data-f="move" aria-label="Move to another cubicle"><option value="">Move to another cubicle</option>'+moveOpts+'</select>'+
+          '</div>';
+        }).join('')+
+        '<button type="button" class="ghost small-btn" data-act="additem" style="margin-top:8px">Add equipment</button>'+
+      '</div></details>';
+  }).join('');
+}
+function fillSettings(){$('sE').value=state.settings.targetEntries;$('sH').value=state.settings.targetHours;$('sW').value=String(state.settings.weekStart)}
+function renderAll(opts){
+  opts=opts||{};
+  renderHeader(); fillForm(); renderTonight(); renderWeek();
+  if(opts.plant!==false) renderPlant();
+}
+
+/* ---------- entry actions + copy ---------- */
+document.addEventListener('click',function(ev){
+  var cp=ev.target.closest('.copy');
+  if(cp){var t=cp.dataset.copy;if(!t){toast('Nothing to copy yet');return}copyText(t,'Copied: '+(t.length>28?t.slice(0,28)+'…':t));return}
+  var act=ev.target.closest('.entry [data-act]'); if(!act)return;
+  var id=act.closest('.entry').dataset.id, e=state.entries.filter(function(x){return x.id===id})[0]; if(!e)return;
+  var a=act.dataset.act;
+  if(a==='jde'){e.entered=!e.entered;save({plant:false})}
+  else if(a==='edit'){startEdit(id)}
+  else if(a==='del'){
+    ask('Delete this entry for '+(e.plantName||e.cub)+'? This can\u2019t be undone.').then(function(ok){
+      if(!ok)return;
+      state.entries=state.entries.filter(function(x){return x.id!==id});
+      if(edit&&edit.id===id){edit=null;lsSet(EKEY,null)}
+      save({plant:false}); toast('Entry deleted');
+    });
+  }
+});
+function copyText(t,msg){
+  function fallback(){
+    var ta=document.createElement('textarea');ta.value=t;ta.setAttribute('readonly','');ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();
+    var ok=false;try{ok=document.execCommand('copy')}catch(e){}
+    document.body.removeChild(ta);toast(ok?msg:'Copy was blocked. Press and hold the text to copy it.');
+  }
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(function(){toast(msg)},fallback)}else fallback();
+}
+
+/* ---------- week nav + summary ---------- */
+$('wPrev').addEventListener('click',function(){weekOffset--;renderWeek()});
+$('wNext').addEventListener('click',function(){if(weekOffset<0){weekOffset++;renderWeek()}});
+$('copyWeek').addEventListener('click',function(){
+  var r=weekRange(weekOffset), list=sorted(weekEntries(weekOffset)), t=totals(list);
+  var lines=['Week '+shortDate(r.st)+' to '+shortDate(r.en)+': '+t.n+' entries, '+fmtDur(t.m)];
+  var last='';
+  list.forEach(function(e){
+    if(e.date!==last){lines.push('');lines.push(dayLabel(e.date));last=e.date}
+    var m=mins(e.tin,e.tout);
+    lines.push('Job '+(e.job||'-')+' | '+e.cub+' | '+((e.plantName||'')+' '+(e.plantNum||'')).trim()+' | '+(e.tin||'--:--')+' to '+(e.tout||'--:--')+(m!=null?' ('+fmtDur(m)+')':''));
+    if(e.desc) lines.push('  '+e.desc.replace(/\n/g,'\n  '));
+  });
+  copyText(lines.join('\n'),'Week summary copied');
+});
+
+/* ---------- plant editor ---------- */
+var pl=$('plantList');
+pl.addEventListener('toggle',function(ev){var d=ev.target;if(!d.dataset||!d.dataset.cid)return;if(d.open)openCubs.add(d.dataset.cid);else openCubs.delete(d.dataset.cid)},true);
+pl.addEventListener('click',function(ev){
+  var b=ev.target.closest('[data-act]'); if(!b)return;
+  var c=cubById(b.closest('[data-cid]').dataset.cid); if(!c)return;
+  var a=b.dataset.act;
+  if(a==='additem'){
+    var nid=uid(); c.items.push({id:nid,name:'',num:''}); openCubs.add(c.id); save();
+    var inp=pl.querySelector('[data-iid="'+nid+'"] input'); if(inp)inp.focus();
+  } else if(a==='delitem'){
+    var iid=b.closest('[data-iid]').dataset.iid, it=c.items.filter(function(i){return i.id===iid})[0];
+    ask('Delete '+((it&&itemLabel(it))||'this equipment')+' from '+c.name+'?').then(function(ok){if(!ok)return;c.items=c.items.filter(function(i){return i.id!==iid});save()});
+  } else if(a==='delcub'){
+    ask('Delete cubicle '+c.name+(c.items.length?' and its '+c.items.length+' '+(c.items.length===1?'item':'items'):'')+'?').then(function(ok){if(!ok)return;state.plant=state.plant.filter(function(x){return x.id!==c.id});save()});
+  }
+});
+pl.addEventListener('change',function(ev){
+  var el=ev.target, f=el.dataset.f; if(!f)return;
+  var c=cubById(el.closest('[data-cid]').dataset.cid); if(!c)return;
+  if(f==='cubname'){
+    var v=el.value.trim();
+    if(!v){el.value=c.name;return}
+    if(v!==c.name&&cubByName(v)){toast('There\u2019s already a cubicle called '+v);el.value=c.name;return}
+    if(draft.cub===c.name)draft.cub=v; if(edit&&edit.cub===c.name)edit.cub=v; persistBuf();
+    c.name=v; save(); return;
+  }
+  var iid=el.closest('[data-iid]').dataset.iid, it=c.items.filter(function(i){return i.id===iid})[0]; if(!it)return;
+  if(f==='name'||f==='num'){it[f]=el.value.trim();save({plant:false});return}
+  if(f==='move'&&el.value){
+    var dest=cubByName(el.value); if(!dest)return;
+    c.items=c.items.filter(function(i){return i.id!==iid}); dest.items.push(it); openCubs.add(dest.id);
+    save(); toast((it.name||'Equipment')+' moved to '+dest.name);
+  }
+});
+$('addCub').addEventListener('click',function(){
+  var v=$('newCub').value.trim(); if(!v){$('newCub').focus();return}
+  if(cubByName(v)){toast('There\u2019s already a cubicle called '+v);return}
+  var id=uid(); state.plant.push({id:id,name:v,items:[]}); openCubs.add(id); $('newCub').value=''; save(); toast('Cubicle '+v+' added');
+});
+
+/* ---------- settings + backup ---------- */
+$('sE').addEventListener('change',function(){state.settings.targetEntries=Math.max(1,parseInt($('sE').value,10)||15);fillSettings();save({plant:false})});
+$('sH').addEventListener('change',function(){state.settings.targetHours=Math.max(1,parseFloat($('sH').value)||25);fillSettings();save({plant:false})});
+$('sW').addEventListener('change',function(){state.settings.weekStart=+$('sW').value;state.settings.wsChosen=true;weekOffset=0;save({plant:false})});
+$('copyBackup').addEventListener('click',function(){copyText(JSON.stringify(state),'Backup copied. Paste it into a note or email to yourself.')});
+$('restoreBtn').addEventListener('click',function(){
+  var s; try{s=JSON.parse($('restoreTxt').value)}catch(e){s=null}
+  if(!valid(s)){toast('That doesn\u2019t look like a Shift log backup');return}
+  ask('Replace everything in the app with this backup ('+s.entries.length+' entries)?','Restore').then(function(ok){
+    if(!ok)return; state=s; normSettings(); $('restoreTxt').value=''; fillSettings(); save(); toast('Backup restored');
+  });
+});
+$('resetPlant').addEventListener('click',function(){
+  ask('Put the cubicle list back to the original? Your saved entries won\u2019t change.','Reset').then(function(ok){if(!ok)return;state.plant=buildDefault();openCubs.clear();save();toast('Cubicle list reset')});
+});
+
+/* ---------- views ---------- */
+function showView(v){
+  if(['tonight','week','plant'].indexOf(v)<0)v='tonight';
+  ['tonight','week','plant'].forEach(function(n){$('v-'+n).hidden=n!==v});
+  document.querySelectorAll('.tabs button').forEach(function(b){if(b.dataset.view===v)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')});
+  lsSet(VKEY,v);
+}
+document.querySelectorAll('.tabs button').forEach(function(b){b.addEventListener('click',function(){if(b.dataset.view==='week')weekOffset=0,renderWeek();showView(b.dataset.view);window.scrollTo(0,0)})});
+
+/* ---------- toast + confirm ---------- */
+var toastT;
+function toast(msg){var t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(function(){t.classList.remove('show')},2200)}
+function ask(text,yes){
+  return new Promise(function(resolve){
+    $('mText').textContent=text; $('mYes').textContent=yes||'Delete'; $('modal').hidden=false;
+    function done(v){$('modal').hidden=true;$('mYes').onclick=null;$('mNo').onclick=null;resolve(v)}
+    $('mYes').onclick=function(){done(true)}; $('mNo').onclick=function(){done(false)};
+    $('mNo').focus();
+  });
+}
+
+/* ---------- backup note ---------- */
+function setSync(){
+  $('sync').textContent='Everything is saved on this phone only. Use Copy backup now and then, and paste it somewhere safe (a note or an email to yourself).';
+}
+
+/* ---------- start ---------- */
+function refreshShift(){if(!edit&&bufEmpty(draft)&&draft.date!==shiftDate()){draft.date=shiftDate();lsSet(DKEY,draft)}}
+document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible'){refreshShift();renderAll({plant:false})}});
+refreshShift(); fillSettings(); showView(lsGet(VKEY)||'tonight'); renderAll(); setSync();
+if('serviceWorker' in navigator&&location.protocol.indexOf('http')===0){navigator.serviceWorker.register('sw.js').catch(function(){})}
+})();
+</script>
+</body>
+</html>
