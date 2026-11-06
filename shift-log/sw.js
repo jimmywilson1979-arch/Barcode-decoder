@@ -1,5 +1,5 @@
 // Network first so everyone gets updates; falls back to the saved copy when there's no signal.
-const CACHE = 'shiftlog-v2';
+const CACHE = 'shiftlog-v3';
 const FILES = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png', './icon-maskable-512.png', './apple-touch-icon.png'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES)).then(() => self.skipWaiting()));

@@ -72,7 +72,9 @@ select{appearance:auto}
 textarea{resize:vertical;min-height:104px;line-height:1.45}
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .timebox{display:flex;gap:6px}
-.timebox input{flex:1;min-width:0}
+.timebox input{flex:1;min-width:0;font-variant-numeric:tabular-nums}
+.timebox input::-webkit-date-and-time-value{text-align:left;min-width:5ch}
+@media (max-width:560px){.row2.times{grid-template-columns:1fr;gap:0}.timebox input{min-width:8.5em}.timebox .now{min-width:72px}}
 .dur-prev{margin:-4px 0 12px;font-size:15px;color:var(--muted);min-height:1.45em}
 .dur-prev b{font-family:'Barlow Condensed',sans-serif;font-size:20px;color:var(--green)}
 .dur-prev.warn,.dur-prev.warn b{color:var(--gold)}
@@ -209,7 +211,7 @@ details.cub[open] summary{border-bottom:1px solid var(--line)}
         <div class="fld"><label for="fONum">Plant number</label><input id="fONum" placeholder="e.g. 2650"></div>
       </div>
       <div class="fld"><label for="fJob">Job number</label><input id="fJob" placeholder="Leave blank if you don't have it yet"></div>
-      <div class="row2">
+      <div class="row2 times">
         <div class="fld"><label for="fIn">Time in</label><div class="timebox"><input type="time" id="fIn"><button type="button" class="now" data-now="fIn" aria-label="Set time in to now">Now</button></div></div>
         <div class="fld"><label for="fOut">Time complete</label><div class="timebox"><input type="time" id="fOut"><button type="button" class="now" data-now="fOut" aria-label="Set time complete to now">Now</button></div></div>
       </div>
