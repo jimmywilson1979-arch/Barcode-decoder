@@ -165,6 +165,8 @@ details.cub[open] summary{border-bottom:1px solid var(--line)}
 #toast.show{opacity:1}
 #modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;justify-content:center;z-index:30;padding:16px;padding-bottom:calc(16px + env(safe-area-inset-bottom,0px))}
 #modal[hidden]{display:none}
+#shiftPick{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;justify-content:center;z-index:30;padding:16px;padding-bottom:calc(16px + env(safe-area-inset-bottom,0px))}
+#shiftPick .sheet p span{font-size:15px;color:var(--muted)}
 .sheet{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;width:100%;max-width:440px}
 .sheet p{margin:0 0 16px;font-size:17px}
 .sheet .actions button{flex:1}
@@ -179,7 +181,7 @@ details.cub[open] summary{border-bottom:1px solid var(--line)}
     <div class="stats">
       <div class="tonight-stat">
         <b id="tN">0</b>
-        <div><span>tonight</span><strong id="tH">0h 00m</strong></div>
+        <div><span id="tWord">tonight</span><strong id="tH">0h 00m</strong></div>
       </div>
       <div class="bars">
         <div class="bar-row"><strong id="hwE">0</strong> of <span id="hwET">15</span> entries this week<div class="track"><div class="fill" id="hwEB"></div></div></div>
@@ -259,6 +261,14 @@ details.cub[open] summary{border-bottom:1px solid var(--line)}
     </div>
 
     <div class="card">
+      <h2>Your shift</h2>
+      <p class="hint" style="margin:4px 0 12px">On nights, anything after midnight counts towards the night it started.</p>
+      <div class="fld" style="margin:0"><label for="sS">I work</label>
+        <select id="sS"><option value="day">Days</option><option value="night">Nights</option></select>
+      </div>
+    </div>
+
+    <div class="card">
       <h2>Weekly minimum</h2>
       <p class="hint" style="margin:4px 0 12px">You meet the minimum by hitting either target.</p>
       <div class="settings-grid">
@@ -284,12 +294,13 @@ details.cub[open] summary{border-bottom:1px solid var(--line)}
 </main>
 
 <nav class="tabs" aria-label="Sections">
-  <button type="button" data-view="tonight">Tonight</button>
+  <button type="button" data-view="tonight" id="tabNow">Tonight</button>
   <button type="button" data-view="week">Week</button>
   <button type="button" data-view="plant">Plant list</button>
 </nav>
 
 <div id="toast" role="status"></div>
+<div id="shiftPick" class="pick" hidden><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="spText"><p id="spText"><b>Which shift do you work?</b><br><span>You can change this later in the Plant list tab.</span></p><div class="actions"><button type="button" class="primary" data-shift="day">Days</button><button type="button" class="primary" data-shift="night">Nights</button></div></div></div>
 <div id="modal" hidden><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="mText"><p id="mText"></p><div class="actions"><button type="button" id="mNo" class="ghost">Cancel</button><button type="button" id="mYes" class="danger">Delete</button></div></div></div>
 
 <script>
@@ -323,13 +334,14 @@ function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){retur
 function pad(n){return String(n).padStart(2,'0')}
 function ymd(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())}
 function parseYmd(s){var p=String(s).split('-').map(Number);return new Date(p[0],p[1]-1,p[2])}
-function shiftDate(){var d=new Date();if(d.getHours()<12)d.setDate(d.getDate()-1);return ymd(d)}
+function isDay(){return !!(state&&state.settings&&state.settings.shift==='day')}
+function shiftDate(){var d=new Date();if(!isDay()&&d.getHours()<12)d.setDate(d.getDate()-1);return ymd(d)}
 function dayLabel(s){return parseYmd(s).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})}
 function shortDate(d){return d.toLocaleDateString('en-GB',{day:'numeric',month:'short'})}
 function toMin(t){if(!t)return null;var p=t.split(':').map(Number);if(isNaN(p[0])||isNaN(p[1]))return null;return p[0]*60+p[1]}
 function mins(a,b){var x=toMin(a),y=toMin(b);if(x==null||y==null)return null;var d=y-x;if(d<0)d+=1440;return d}
 function fmtDur(m){return Math.floor(m/60)+'h '+pad(m%60)+'m'}
-function sortKey(e){var m=toMin(e.tin);return m==null?9999:(m<720?m+1440:m)}
+function sortKey(e){var m=toMin(e.tin);return m==null?9999:(isDay()?m:(m<720?m+1440:m))}
 function itemLabel(it){return it.num?it.name+' – '+it.num:it.name}
 function lsGet(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}}
 function lsSet(k,v){try{if(v==null)localStorage.removeItem(k);else localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}
@@ -340,7 +352,7 @@ function emptyBuf(date){return {date:date||shiftDate(),cub:'',plantId:'',oName:'
 function bufEmpty(b){return !b.cub&&!b.job&&!b.tin&&!b.tout&&!b.desc&&!b.oName&&!b.oNum}
 function cubByName(n){for(var i=0;i<state.plant.length;i++)if(state.plant[i].name===n)return state.plant[i];return null}
 function cubById(id){for(var i=0;i<state.plant.length;i++)if(state.plant[i].id===id)return state.plant[i];return null}
-function normSettings(){state.settings=Object.assign({targetEntries:15,targetHours:25,weekStart:0},state.settings||{});if(!state.settings.wsChosen)state.settings.weekStart=0}
+function normSettings(){state.settings=Object.assign({targetEntries:15,targetHours:25,weekStart:0},state.settings||{});if(!state.settings.wsChosen)state.settings.weekStart=state.settings.shift==='day'?1:0}
 
 /* ---------- state ---------- */
 var state=lsGet(KEY); if(!valid(state)) state=fresh(); normSettings();
@@ -470,7 +482,8 @@ function sorted(list){return list.slice().sort(function(a,b){return a.date<b.dat
 /* ---------- renders ---------- */
 function setBar(id,frac,met){var el=$(id);el.style.width=Math.min(100,Math.round(frac*100))+'%';el.classList.toggle('met',!!met)}
 function renderHeader(){
-  var sd=shiftDate(); $('shiftLabel').textContent='Night of '+dayLabel(sd);
+  var sd=shiftDate(); $('shiftLabel').textContent=(isDay()?'Today, ':'Night of ')+dayLabel(sd);
+  var w=isDay()?'Today':'Tonight'; $('tWord').textContent=w.toLowerCase(); $('tonightHead').textContent=w; $('tabNow').textContent=w;
   var t=totals(state.entries.filter(function(e){return e.date===sd}));
   $('tN').textContent=t.n; $('tH').textContent=fmtDur(t.m);
   var w=totals(weekEntries(0)), te=+state.settings.targetEntries, th=+state.settings.targetHours, hrs=w.m/60;
@@ -480,7 +493,7 @@ function renderHeader(){
 }
 function renderTonight(){
   var sd=shiftDate(), list=sorted(state.entries.filter(function(e){return e.date===sd}));
-  $('tonightList').innerHTML=list.length?list.map(entryCard).join(''):'<div class="empty">No entries yet tonight. Fill in the form above when you go into a cubicle.</div>';
+  $('tonightList').innerHTML=list.length?list.map(entryCard).join(''):'<div class="empty">No entries yet '+(isDay()?'today':'tonight')+'. Fill in the form above when you go into a cubicle.</div>';
   var pending=state.entries.filter(function(e){return !e.entered}).length, el=$('toEnter');
   el.className=''; 
   if(pending){el.textContent=pending+' to enter in JDE';}
@@ -527,7 +540,7 @@ function renderPlant(){
       '</div></details>';
   }).join('');
 }
-function fillSettings(){$('sE').value=state.settings.targetEntries;$('sH').value=state.settings.targetHours;$('sW').value=String(state.settings.weekStart)}
+function fillSettings(){$('sE').value=state.settings.targetEntries;$('sH').value=state.settings.targetHours;$('sW').value=String(state.settings.weekStart);$('sS').value=isDay()?'day':'night'}
 function renderAll(opts){
   opts=opts||{};
   renderHeader(); fillForm(); renderTonight(); renderWeek();
@@ -622,6 +635,13 @@ $('addCub').addEventListener('click',function(){
 $('sE').addEventListener('change',function(){state.settings.targetEntries=Math.max(1,parseInt($('sE').value,10)||15);fillSettings();save({plant:false})});
 $('sH').addEventListener('change',function(){state.settings.targetHours=Math.max(1,parseFloat($('sH').value)||25);fillSettings();save({plant:false})});
 $('sW').addEventListener('change',function(){state.settings.weekStart=+$('sW').value;state.settings.wsChosen=true;weekOffset=0;save({plant:false})});
+function setShift(v){
+  state.settings.shift=v; normSettings(); weekOffset=0;
+  if(!edit&&bufEmpty(draft)){draft.date=shiftDate();lsSet(DKEY,draft)}
+  fillSettings(); save();
+}
+$('sS').addEventListener('change',function(){setShift($('sS').value);toast(isDay()?'Set to days':'Set to nights')});
+document.querySelectorAll('#shiftPick [data-shift]').forEach(function(b){b.addEventListener('click',function(){$('shiftPick').hidden=true;setShift(b.dataset.shift)})});
 $('copyBackup').addEventListener('click',function(){copyText(JSON.stringify(state),'Backup copied. Paste it into a note or email to yourself.')});
 $('restoreBtn').addEventListener('click',function(){
   var s; try{s=JSON.parse($('restoreTxt').value)}catch(e){s=null}
@@ -664,6 +684,7 @@ function setSync(){
 function refreshShift(){if(!edit&&bufEmpty(draft)&&draft.date!==shiftDate()){draft.date=shiftDate();lsSet(DKEY,draft)}}
 document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible'){refreshShift();renderAll({plant:false})}});
 refreshShift(); fillSettings(); showView(lsGet(VKEY)||'tonight'); renderAll(); setSync();
+if(!state.settings.shift)$('shiftPick').hidden=false;
 if('serviceWorker' in navigator&&location.protocol.indexOf('http')===0){navigator.serviceWorker.register('sw.js').catch(function(){})}
 })();
 </script>
